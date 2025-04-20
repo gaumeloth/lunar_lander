@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 1) Crea venv e installa dipendenze
+# --- 1) Creazione venv ---
 python3 -m venv venv
-./venv/bin/pip install --upgrade pip
-./venv/bin/pip install -r requirements.txt
 
-# 2) Rileva la shell padre del processo
+# --- 2) Install runtime deps ---
+venv/bin/pip install --upgrade pip || true
+venv/bin/pip install -r requirements.txt
+
+# --- 3) Install dev deps (solo se richiesto) ---
+if [[ "${1:-}" == "--dev" ]]; then
+  echo "✅ Installing development dependencies..."
+  venv/bin/pip install -r requirements-dev.txt
+fi
+
+# --- 4) Rilevazione shell corrente ---
 parent_shell="$(ps -p "${PPID}" -o comm= 2>/dev/null || echo "")"
 shell_name="$(basename "${parent_shell}")"
 
-# 3) Scegli il comando di attivazione
 case "${shell_name}" in
 fish)
   activate_cmd="source venv/bin/activate.fish"
@@ -26,7 +33,7 @@ bash | zsh | ksh | dash | sh)
   ;;
 esac
 
-# 4) Messaggio all’utente
+# --- 5) Output istruzioni ---
 cat <<EOF
 
 🎉 Ambiente virtuale creato con successo!
@@ -35,16 +42,17 @@ EOF
 
 if [[ -n "${activate_cmd}" ]]; then
   cat <<EOF
-Per attivarlo (hai rilevato: ${shell_name}):
+Per attivarlo (shell rilevata: ${shell_name}):
     ${activate_cmd}
 
 EOF
 else
   cat <<'EOF'
-Non sono riuscito a riconoscere automaticamente la tua shell:
-  • Bash/Zsh/Ksh/Dash:   source venv/bin/activate
-  • Fish:                 source venv/bin/activate.fish
-  • Csh/Tcsh:             source venv/bin/activate.csh
+Non ho riconosciuto la tua shell.
+Per attivarlo, esegui uno di questi comandi:
+  • bash/zsh/ksh/dash:  source venv/bin/activate
+  • fish:               source venv/bin/activate.fish
+  • csh/tcsh:           source venv/bin/activate.csh
 
 EOF
 fi
@@ -53,5 +61,7 @@ cat <<'EOF'
 Per disattivare l'ambiente (in qualsiasi shell):
     deactivate
 
-Buon lavoro con il tuo Lunar Lander! 🚀
+---
+Se vuoi includere anche le dipendenze di sviluppo, rilancia:
+    ./setup.sh --dev
 EOF
