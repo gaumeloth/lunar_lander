@@ -1,0 +1,5 @@
+# include runtime
+-r requirements.txt
+
+# solo test framework
+pytest>=7.0
